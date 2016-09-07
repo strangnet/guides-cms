@@ -1,0 +1,28 @@
+{% if user.bio and user.location and user.blog %}
+    <p>{{user.bio}}</p>
+    <p>
+        {{user.name}} lives in {{user.location}} and also writes at
+        {{user.blog|urlize(target="_blank")}}.
+    </p>
+{% elif user.bio %}
+    <p class="bio-text">{{user.bio}}</p>
+{% elif user.location and user.blog %}
+    <p>
+        lives in {{user.location}} and also writes at
+        {{user.blog|urlize(target="_blank")}}.
+    </p>
+{% elif user.location %}
+    <p>
+        lives in {{user.location}}.
+    </p>
+{% elif user.blog %}
+    <p>
+        {{user.name}} also writes at
+        {{user.blog|urlize(target="_blank")}}.
+    </p>
+{% endif %}
+
+<p>
+    Dig into code from {{user.login}}
+    <a href="http://github.com/{{user.login}}" target="_blank"> on Github</a>.
+</p>

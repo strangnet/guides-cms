@@ -7,15 +7,162 @@ body {
   letter-spacing: -.015em;
 }
 
+/* Mimic Pluralsight.com styling */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 200;
+}
+
+h1 {
+    font-size: 50px;
+}
+
+h2 {
+    font-size: 42px;
+}
+
+h3 {
+    font-size: 30px;
+}
+
+h4 {
+    font-size: 24px;
+}
+
+h5 {
+    font-size: 19px;
+}
+
+h6 {
+    font-size: 19px;
+}
+
+/* Logo-menu and effects */
+
+.hack-links {
+    margin: 0;
+    padding: 0;
+}
+
+.hack-links a {
+    display: block;
+    padding: 0;
+}
+
+.navbar-brand {
+    z-index: 1020; /* modal 1050/1040, fullscreen 1030 */
+    position: relative;
+}
+
+.navbar-brand img {
+    display: inline-block;
+}
+
+.navbar .navbar-brand {
+    background-color: #fff;
+}
+
+.navbar-inverse {
+    background-color: transparent;
+    border: none;
+}
+
+.navbar-inverse .navbar-brand {
+    background-color: transparent;
+}
+
+.hack-links-plus-icon {
+    z-index: 1020;
+    padding: 0;
+    margin-top: 8px;
+    cursor: pointer;
+
+    -moz-transform: rotate(0);
+    -ms-transform: rotate(0);
+    -webkit-transform: rotate(0);
+    transform: rotate(0);
+
+    -moz-transition: -moz-transform 0.4s cubic-bezier(0.08, 1.09, 0.64, 1.12);
+    -o-transition: -o-transform 0.4s cubic-bezier(0.08, 1.09, 0.64, 1.12);
+    -webkit-transition: -webkit-transform 0.4s cubic-bezier(0.08, 1.09, 0.64, 1.12);
+    transition: transform 0.4s cubic-bezier(0.08, 1.09, 0.64, 1.12);
+}
+
+.hack-links:hover .hack-links-plus-icon, .hack-links:focus .hack-links-plus-icon, .hack-links:active .hack-links-plus-icon {
+    -moz-transform: rotate(225deg);
+    -ms-transform: rotate(225deg);
+    -webkit-transform: rotate(225deg);
+    transform: rotate(225deg);
+}
+
+.external-hack-links img {
+    width: 200px;
+}
+
+.hack-links .external-hack-links {
+    z-index: 1010;
+    position: absolute;
+    width: 240px;
+    height: 110px;
+    top: -160px;
+    left: 0;
+    padding: 10px 0;
+    opacity: 0;
+
+    -webkit-transition: -webkit-transform 0.2s cubic-bezier(.08,1.09,.64,1.12);
+    -moz-transition: -moz-transform 0.2s cubic-bezier(.08,1.09,.64,1.12);
+    -o-transition: -o-transform 0.2s cubic-bezier(.08,1.09,.64,1.12);
+    transition: transform 0.2s cubic-bezier(.08,1.09,.64,1.12);
+}
+
+.hack-links:hover .external-hack-links {
+    transform: translateY(200px);
+    padding-bottom: 0;
+    opacity: 1;
+}
+
+.navbar .hack-links:hover .external-hack-links {
+    background-color: #fff;
+    border: 1px solid #eee;
+    border-top: 0;
+}
+
+.navbar .hack-links:hover .external-hack-links img {
+    filter: invert(100%);
+    -webkit-filter: invert(100%);
+}
+
+.navbar-inverse .hack-links:hover .external-hack-links {
+    background-color: transparent;
+    border: none;
+    border-top: 0;
+}
+
+.navbar-inverse .hack-links:hover .external-hack-links img {
+    filter: invert(0%);
+    -webkit-filter: invert(0%);
+}
+
+.navbar .external-hack-links a:hover {
+    background-color: #eee;
+}
+
+.navbar-inverse .external-hack-links a:hover {
+    background-color: #444;
+}
+
 /* Default color of Pluralsight buttons */
-.btn-primary,
+.btn-primary {
+    background-color: #fb6e20;
+    border-color: #fb6e20;
+}
+
 .btn-primary:focus,
 .btn-primary:hover,
 .btn-primary:active,
 .btn-primary:active:hover,
 .btn-primary:active:focus {
-    background-color: #fb6e20;
-    border-color: #fb6e20;
+    background-color: #ed681e;
+    border-color: #ed681e;
 }
 
 /* Use default Pluralsight link styling */
@@ -26,15 +173,29 @@ a, a:visited, a:hover, a:focus {
 
 .emphasize {
     border: 1px solid #ffffff;
-    border-radius: 30px;
+    padding: 15px;
 }
 
 .emphasize-dark {
     border: 1px solid #000000;
-    border-radius: 30px;
-    padding: 15px 15px 15px 15px;
+    padding: 15px;
 }
 
+#navbar a.emphasize {
+    /* Align words with other links */
+    margin-top: 6px;
+    padding: 9px 35px 9px 35px;
+}
+
+#article-sidebar {
+    /* Allow this secondary content fall behind other stuff */
+    z-index: 1;
+}
+
+#article-sidebar .emphasize-dark {
+    text-align: center;
+    padding: 8px;
+}
 
 a:hover.emphasize-dark  {
     color: #000000;
@@ -51,6 +212,10 @@ a:hover.emphasize-dark  {
     padding-top: 0px;
 }
 
+#navbar a {
+    font-weight: 300;
+}
+
 #header-white .navbar {
     background-color: #ffffff;
 }
@@ -65,22 +230,55 @@ a:hover.emphasize-dark  {
     border: 1px solid #000000;
 }
 
-#header-dark {
-    background-color: #222222;
-    color: #ffffff;
-    padding: 15px 15px 15px 15px;
+#hero {
+    background-image: url('/static/img/hero.png');
+    width: 100%;
+    background-size: cover;
+    background-color: #2d2d2d;
+}
+
+#hero h2 {
+    font-size: 48px;
     margin-bottom: 15px;
 }
 
+#header-dark {
+    background-color: #2d2d2d;
+    color: #ffffff;
+    padding: 15px 15px 15px 15px;
+}
+
 #header-dark .navbar {
-    background-color: #222222;
+    background-color: #2d2d2d;
     border: none;
+
+    /* Enough height to clear the drop-down logo menu */
+    min-height: 105px;
+}
+
+#hero #header-dark .navbar {
+    background-color: transparent;
+    min-height: initial;
+}
+
+#hero #header-dark {
+    background-color: transparent;
+}
+
+#hero #header-dark #navbar {
+    background-color: transparent;
 }
 
 #header-dark #navbar a,
 #header-dark #navbar a:visited,
 #header-dark #navbar a:focus {
     color: #ffffff;
+}
+
+#header-dark #navbar a.cta-text,
+#header-dark #navbar a.cta-text:visited,
+#header-dark #navbar a.cta-text:focus {
+    color: #f96816;
 }
 
 #header-dark #navbar .dropdown-menu a,
@@ -103,14 +301,50 @@ a:hover.emphasize-dark  {
     background-color: #000000;
 }
 
+.cta-text {
+    color: #f96816;
+}
+
 #featured {
-    background-color: #222222;
-    padding-bottom: 250px;
+    background-color: #414042;
+    min-height: 200px;
+    margin-top: 100px;
+    padding-top: 30px;
+    padding-bottom: 30px;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+}
+
+#featured img {
+    margin-left: 10px;
+    /* Match bootstrap setting for h1 */
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+#featured .heart-info img {
+    margin-top: 0px;
+}
+
+#featured .article-details .heart-count {
+    position: relative;
+    top: -4px;
+}
+
+#featured .article-details p {
+    font-size: 16px;
+    color: #777;
+    font-weight: normal;
+}
+
+#featured .article-details p.cta-text {
+    color: #f96816;
 }
 
 #featured span.intro {
-    font-size: 12px;
-    border-bottom: 1px solid #ffffff;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 500;
 }
 
 #featured a, #featured a:visited, #featured a:focus #featured a:hover {
@@ -121,22 +355,32 @@ a:hover.emphasize-dark  {
 
 .lead {
     font-size: 46px;
-}
-
-#featured p {
-    font-size: 20px;
+    margin-bottom: 10px;
 }
 
 #body {
     background-color: #ffffff;
     color: #000000;
+    padding-bottom: 15px;
+}
+
+#hero + #body {
+    background-color: #171717;
+    color: #ffffff;
+}
+
+.body-dark {
+    background-color: #171717;
+    color: #ffffff;
 }
 
 .article-teaser {
-    background-color: #ffffff;
-    padding: 10px;
+    background-color: #2d2d2d;
     margin-right: 30px;
     margin-top: 15px;
+    padding-left: 0px;
+    padding-right: 0px;
+    padding-bottom: 10px;
 }
 
 .article-teaser img.thumbnail {
@@ -155,27 +399,62 @@ a:hover.emphasize-dark  {
 
 .article-teaser:hover {
     color: #f96816;
-    -moz-box-shadow: 1px 1px 5px #333;
-    -webkit-box-shadow: 1px 1px 5px #333;
-    box-shadow: 1px 1px 5px #333;
+    background-color: #414042;
 }
 
 .article-teaser .article-author {
-    color: #f96616;
+    color: #888888;
     font-size: 16px;
     padding-right: 10px;
     position: relative;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+}
+
+.article-teaser .heart-info {
+    position: relative;
+    top: 45px;
+    margin-left: 35px;
+}
+
+.no-heart {
+    width: 19px;
+    height: 17px;
+}
+
+.heart {
+    background-image: url('/static/img/full-heart.svg');
+    width: 19px;
+    height: 17px;
+    background-repeat: no-repeat;
+}
+
+.heart-empty {
+    background-image: url('/static/img/empty-heart.svg');
+    width: 19px;
+    height: 17px;
+    background-repeat: no-repeat;
+}
+
+.article-teaser .heart-info .heart-count {
+    color: #ffffff;
+    position: absolute;
+    left: 30px;
+    font-size: 10px;
+    margin-left: -5px;
 }
 
 .article-teaser .article-author span.name {
     margin-right: 10px;
     margin-top: 5px;
     float: right;
+    font-size: 15px;
 }
 
 .article-teaser .article-author span.gh-name {
     position: absolute;
     top: 25px;
+    font-size: 12px;
 }
 
 .article-teaser .article-author img {
@@ -193,12 +472,13 @@ a:hover.emphasize-dark  {
     top: 0;
     left: 0;
     z-index: 1;
-    border: 1px solid #aeaeae;
 }
 
 .article-teaser .title {
-    font-size: 15px;
-    height: 50px;
+    color: #ffffff;
+    font-size: 17px;
+    min-height: 140px;
+    font-weight: 500;
 }
 
 .article-teaser hr {
@@ -210,14 +490,24 @@ a:hover.emphasize-dark  {
     /* Based off of article-teaser height. Forces the hr and link inside teaser
     * to show up in uniform place regardless of title length. */
     height: 100px;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    padding: 15px 0px 15px 15px;
+}
+
+.article-description img {
+    float: left;
+    margin-right: 10px;
 }
 
 #article-header {
     position: relative;
+    margin-bottom: 40px;
 }
 
 #article-header img {
     float: left;
+    margin-top: 10px;
 }
 
 #article-header h2 {
@@ -236,11 +526,37 @@ a:hover.emphasize-dark  {
     font-size: 16px;
 }
 
+#article-header .heart-info {
+    position: absolute;
+    top: 40px;
+    left: 50px;
+    font-size: 18px;
+}
+
+#article-header .heart-guide .heart-count {
+    position: absolute;
+    /* width of heart icon plus a bit of space */
+    left: 30px;
+    font-size: 14px;
+    top: -2px;
+}
+
+.heart-guide:hover,
+.heart-guide:focus {
+    cursor: pointer;
+}
+
+.heart-count {
+    font-size: 15px;
+}
+
 #title {
     clear: left;
+    padding-top: 20px;
 }
 
 #table-of-contents {
+    margin-top: 30px;
     font-size: 12px;
 }
 
@@ -268,18 +584,23 @@ a:hover.emphasize-dark  {
     width: 30%;
 }
 
-/* Push article text over to account for the octicon-link showing up on hover.
- * Without this the headers would appear slightly indented on entire article
- * this forces all text to left align so the octicon link can show up in the
- * padding. */
 #article p {
-    padding-left: 21px;
     overflow-wrap: break-word;
     word-wrap: break-word;
 }
 
 #article pre, #article blockquote, #article form {
-    margin-left: 21px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+#article code {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+#article form {
+    display: inline;
 }
 
 #article h1 .octicon-link,
@@ -302,15 +623,47 @@ a:hover.emphasize-dark  {
     visibility: visible;
 }
 
-#footer {
-    padding: 15px 15px 15px 15px;
-    background-color: #f96616;
-    color: #000000;
-    margin-top: 15px;
+
+#love-it {
+    font-size: 18px;
+    font-weight: 500;
 }
 
-#footer .emphasize {
+#love-it .heart-guide {
+    margin-left: 20px;
+}
+
+#love-it .heart-guide .heart-count {
+    margin-left: 30px;
+    top: -2px;
+}
+
+#user-info {
+    background-color: #efefef;
     padding: 15px;
+    margin-bottom: 30px;
+}
+
+#user-info h4 {
+    margin-top: 0px;
+}
+
+#user-info p {
+    padding-left: 0px;
+}
+
+#user-info img {
+    max-width: 230px;
+    max-height: 230px;
+}
+
+#footer {
+    /* Necessary to make sure table of contents z-index flows behind this. */
+    position: relative;
+    z-index: 2;
+    padding: 30px 15px 15px 15px;
+    background-color: #2d2d2d;
+    color: #ffffff;
 }
 
 #footer a, #footer a:focus, #footer a:visited {
@@ -322,40 +675,33 @@ a:hover.emphasize-dark  {
     text-decoration: none;
 }
 
-#footer a.emphasize, #footer a.emphasize:focus, #footer a.emphasize:visited {
-    font-size: 18px;
-    color: #ffffff;
-}
-
-#footer a.emphasize:hover {
-    font-size: 18px;
-    color: #000000;
-    text-decoration: none;
-}
-
-#footer .features {
-    margin-bottom: 25px;
-}
-
-#footer .contact {
-    margin-top: 25px;
-    text-align: left;
-}
-
-#footer .write-guide {
+#footer {
     text-align: center;
 }
 
+#footer img {
+    margin-bottom: 10px;
+}
+
 #footer .social-links {
-    text-align: right;
+    padding-top: 10px;
+}
+
+#footer .social-links img {
+    margin-right: 15px;
 }
 
 #article-list {
-    background-color: #efefef;
-    /* Create overlap effect with padding-bottom on featured */
-    margin-top: -170px;
+    background-color: #222222;
     padding: 15px;
     min-height: 250px;
+    color: #ffffff;
+    margin-bottom: 30px;
+}
+
+#article-list .nav {
+    border-bottom: 1px solid #656466;
+    color: #888888;
 }
 
 #article-list .nav > li {
@@ -367,34 +713,58 @@ a:hover.emphasize-dark  {
     font-size: 14px;
 }
 
+/* Stack filter box */
 #article-list .form-control {
-    background-color: #efefef;
+    background-color: #222222;
 }
 
 #article-list .btn-default {
-    background-color: #efefef;
+    background-color: #222222;
     border: none;
     font-size: 14px;
     color: #696969;
     padding-top: 10px;
 }
 
+/* Help on stack filter box */
+#article-list .popover-title {
+    background-color: #222222;
+    border-bottom: 1px solid #696969;
+}
+
+#article-list .dropdown-menu {
+    background-color: #222222;
+}
+
+/* 'X' button on stack filter box */
+#article-list .dropdown-menu .close {
+    color: #ffffff;
+}
+
+#article-list .dropdown-menu li a:hover {
+    background-color: #696969;
+}
+
 #article-list .nav li a.active, #article-list .nav li a.active:visited, #article-list .nav li a.active:focus, #article-list .nav li.active:hover {
-    color: #000000;
-    text-decoration: underline;
+    color: #ffffff;
+    background-color: #222222;
+    border-bottom: 5px solid #f96816;
+    font-weight: 500;
 }
 
 #article-list .nav li a, #article-list .nav li a:visited, #article-list .nav li a:focus, #article-list .nav li:hover {
-    color: #696969;
+    color: #ffffff;
+    background-color: #222222;
 }
 
 #signup-row {
+    position: relative;
+    z-index: 3;
     background-color: rgba(41, 45, 53, 0.901961);
     border-top-color: rgba(255, 255, 255, 0.0980392);
     position: fixed;
     bottom: 0px;
     width: 100%;
-    z-index: 2;
     margin: 0px;
 }
 
@@ -403,6 +773,7 @@ a:hover.emphasize-dark  {
 }
 
 #signup-row p, #signup-row h4 {
+    color: #ffffff;
     text-align: center;
 }
 
@@ -421,7 +792,7 @@ a:hover.emphasize-dark  {
     font-weight: 600;
     border-radius: 50%;
     text-align: center;
-    padding-top: 1px;
+    padding-top: 2px;
 }
 
 .close-btn:hover {
@@ -430,7 +801,6 @@ a:hover.emphasize-dark  {
 }
 
 #signup {
-    padding: 4px;
     font-size: 16px;
     font-weight: 500;
     color: #ffffff;
@@ -440,17 +810,79 @@ a:hover.emphasize-dark  {
     color: #000000;
 }
 
-#signup .btn-primary,
-#signup .btn-primary:focus,
-#signup .btn-primary:hover,
-#signup .btn-primary:active,
-#signup .btn-primary:active:hover,
-#signup .btn-primary:active:focus {
+#signup form {
+    margin-top: 10px;
+}
+
+#signup button {
+    padding-bottom: 10px;
+}
+
+#footer #signup form {
+    margin-top: 0px;
+}
+
+#footer #signup .form-group {
+    margin-right: 15px;
+    width: 200px;
+}
+
+.btn-primary {
     font-size: 15px;
-    padding: 8px;
-    background-color: #a5d92b;
-    border-color: #a5d92b;
     color: #ffffff;
+    background-color: #f96816;
+    border-color: #f96816;
+}
+
+.btn {
+    border-radius: 0;
+}
+
+.btn-primary:focus,
+.btn-primary:hover,
+.btn-primary:active,
+.btn-primary:active:hover,
+.btn-primary:active:focus {
+    background-color: #ff7b39;
+    border-color: #ff7b39;
+}
+
+.btn-write-guide {
+    border: 1px solid white;
+    padding-top: 9px !important;
+    margin-top: 6px !important;
+    padding-bottom: 9px !important;
+    margin-bottom: 6px !important;
+    padding-left: 35px !important;
+    padding-right: 35px !important;
+}
+
+#footer #signup .btn-primary {
+    width: 180px;
+    margin-left: -10px;
+    margin-top: 2px;
+    padding: 6px;
+}
+
+#footer #signup #email {
+    margin-top: 5px;
+    height: 35px;
+}
+
+.slack-signup a,
+.slack-signup a:active,
+.slack-signup a:hover,
+.slack-signup a:visited,
+.slack-signup a:focus {
+    font-size: 16px;
+    padding: 10px 65px;
+    background-color: #f96816;
+    border-color: #f96816;
+    color: #ffffff;
+}
+
+.slack-signup p {
+    margin-bottom: 25px;
 }
 
 .load-guides {
@@ -465,17 +897,50 @@ a:hover.emphasize-dark  {
 
 .mission {
     text-align: center;
-    margin-bottom: 25px;
+    color: #ffffff;
+    font-size: 20px;
+    margin-top: 20px;
 }
 
 .mission p {
-    color: #696969;
-    font-size: 20px;
+    text-align: left;
 }
 
-#share-column .emphasize {
-    border: 1px solid #f96616;
-    padding: 15px;
+.mission .cta-text {
+    font-weight: 500;
+}
+
+.mission .feature img {
+    float: left;
+    margin-right: 10px;
+}
+
+.mission .feature p {
+    line-height: 2em;
+    float: left;
+}
+
+#hero .mission {
+    background-color: transparent;
+}
+
+#hero .mission a,
+#hero .mission a:visited {
+    color: #ffffff;
+    text-decoration: underline;
+}
+
+#hero .mission a:hover,
+#hero .mission a:focus {
+    color: #f96816;
+    text-decoration: underline;
+}
+
+#hero .mission a.cta-text,
+#hero .mission a.cta-text:visited,
+#hero .mission a.cta-text:hover,
+#hero .mission a.cta-text:focus {
+    color: #f96816;
 }
 
 /* Overrides bootstrap-markdown CSS */
@@ -490,6 +955,10 @@ a:hover.emphasize-dark  {
     text-align: center;
 }
 
+.bg-success {
+    padding: 10px;
+}
+
 #header-dark .bg-danger {
     color: #000000;
 }
@@ -500,15 +969,6 @@ a:hover.emphasize-dark  {
 
 #header-dark .bg-warning {
     color: #000000;
-}
-
-#editor-section {
-    margin-top: 50px;
-}
-
-#editor-section #title {
-    margin-top: 20px;
-    width: 70%;
 }
 
 a.active-page {
@@ -523,6 +983,20 @@ a.active-page {
     max-width: 200px;
 }
 
+#workflow-help {
+    clear: left;
+    margin-bottom: 35px;
+}
+
+#workflow-help p {
+    font-size: 16px;
+    text-align: left;
+}
+
+#workflow-help h1, #workflow-help h2 {
+    text-align: center;
+}
+
 /* Override button size for the bootstrap-select buttons to account for our
  * font. It defaults to 14px which is a bit too big for the default dropdown
  * text. */
@@ -530,9 +1004,58 @@ a.active-page {
     font-size: 12px;
 }
 
+td.login-name {
+    padding-top: 15px !important;
+    white-space: nowrap;
+}
+
+.img-column {
+    /* Match padding of header elements. */
+    padding-top: 20px;
+}
+
+.user-profile .bio-text {
+    font-size: 20px;
+}
+
+#footer-logo-1 {
+    display: block;
+}
+
+#footer-logo-2 {
+    display: none;
+}
+
+/* Used on published_workflow.html to center tweet/fb buttons */
+.share-button {
+    text-align: center;
+}
+
+#no-guides {
+    text-align: center;
+    font-size: 18px;
+}
+
+.login-button .btn-primary {
+    color: #fff;
+}
+
 @media(min-width:992px) {
+    #footer #signup #email {
+        /* Force bigger width when in same row as stacks box. */
+        width: 210px;
+    }
+
     .article-teaser .article-author span.gh-name {
         right: 70px;
+    }
+
+    #featured .article-details p.cta-text {
+        color: #f96816;
+    }
+
+    #featured .article-details p.heart-info {
+        margin-left: 30px;
     }
 }
 
@@ -541,8 +1064,16 @@ a.active-page {
         position: static;
     }
 
+    #user-info h4 {
+        margin-top: 20px;
+    }
+
     #article-sidebar {
         text-align: center;
+    }
+
+    #article-sidebar .emphasize-dark {
+        display: inline;
     }
 
     #article-sidebar .hr-container {
@@ -562,19 +1093,13 @@ a.active-page {
     }
 
     .article-teaser .article-author {
-        text-align: center;
         font-size: 14px;
-    }
-
-    .article-teaser .article-author span.name {
-        float: left;
-        margin-top: 0px;
     }
 
     .article-teaser .article-author span.gh-name {
         position: absolute;
         top: 25px;
-        left: 0px;
+        right: 55px;
     }
 
     .article-teaser .article-author {
@@ -589,9 +1114,53 @@ a.active-page {
 }
 
 @media(max-width:767px) {
+    #featured h1 {
+        font-size: 36px;
+    }
+
+    #featured img {
+        margin-left: 5px;
+    }
+
+    .article-teaser {
+        margin-left: 0px;
+    }
+
+    #footer .form-group-sm {
+        margin: 10px auto;
+    }
+
+    #footer #signup .form-group {
+        width: auto;
+    }
+
     #title {
         font-size: 32px;
-        padding-top: 20px;
+        padding-top: 40px;
+    }
+
+    .markdown-body h1 {
+        font-size: 32px;
+    }
+
+    .markdown-body h2 {
+        font-size: 27px;
+    }
+
+    .markdown-body h3 {
+        font-size: 19px;
+    }
+
+    .markdown-body h4 {
+        font-size: 15px;
+    }
+
+    .markdown-body h5 {
+        font-size: 27px;
+    }
+
+    .markdown-body h6 {
+        font-size: 12px;
     }
 
     .lead {
@@ -608,26 +1177,44 @@ a.active-page {
         margin-left: 0px;
     }
 
-    #article h1 .octicon-link,
-    #article h2 .octicon-link,
-    #article h3 .octicon-link,
-    #article h4 .octicon-link,
-    #article h5 .octicon-link,
-    #article h6 .octicon-link {
-        display: none;
-    }
-
-    #article h1:hover .octicon-link,
-    #article h2:hover .octicon-link,
-    #article h3:hover .octicon-link,
-    #article h4:hover .octicon-link,
-    #article h5:hover .octicon-link,
-    #article h6:hover .octicon-link {
-        display: none;
-    }
-
     .close-btn {
         top: 10px;
-        right: 10px;
+        right: 5px;
+    }
+
+    /* Clear social share buttons that show up at bottom on mobile. */
+    #signup-row {
+        bottom: 50px;
+    }
+}
+
+
+@media(min-width:1170px) {
+    #article-sidebar {
+        /* Avoid sidebar overflowing at really wide resolutions */
+        max-width: 200px;
+    }
+
+    #footer-logo-1 {
+        display: none;
+    }
+
+    #footer-logo-2 {
+        display: block;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .btn-autosize {
+      padding: 1px 5px;
+      font-size: 12px;
+      line-height: 1.5;
+      border-radius: 3px;
+    }
+}
+
+@media(max-width:375px) {
+    #article-header .heart-info {
+        top: 60px;
     }
 }

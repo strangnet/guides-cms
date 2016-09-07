@@ -1,29 +1,90 @@
 {% extends "layout.html" %}
 
 {% block header %}
-    {{super()}}
+    <div id="hero">
+        {{super()}}
 
-    <div class="container">
-        <div id="featured">
-        {% if featured_article %}
-                <a href="/review/{{featured_article.path}}">
-                    <span class="intro">Featured Guide</span>
-                    <h1 class="lead">{{featured_article.title}}</h1>
-                    <h2><small>by {{featured_article|author_name}}</small></h2>
-                </a>
-        {% else %}
-            <a href="/faq/">
-                <span class="intro">Featured Guide</span>
-                <h1 class="lead">A Call for Hackers to teach.&nbsp;&nbsp;Together.</h1>
-                <h2><small>by hack.guides()</small></h2>
-            </a>
-        {% endif %}
+        <div class="container">
+            {% include "mission.html" %}
+
+            <div id="featured">
+            {% if featured_article %}
+                <div class="row article-details">
+                    <div class="col-xs-12 col-md-offset-3 col-md-7">
+                        <span class="intro">Featured Guide</span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-12 col-md-2 col-md-offset-1">
+                        {% if featured_article.stack_image_url %}
+                            <img src="{{featured_article.stack_image_url}}" width="99" height="104" alt="{{featured_article.stacks[0]}}"/>
+                        {% endif %}
+                    </div>
+
+                    <!--
+                    Purposely not using all 12 columns here to force title
+                    to wrap sooner. This will prevent lots of titles from
+                    having only 1 word on second line.
+                    -->
+
+                    <div class="col-xs-12 col-md-7">
+                        <a href="{{featured_article|url_for_article}}">
+                            <h1>{{featured_article.title}}</h1>
+                            <div class="article-details row">
+                                <div class="col-sm-6">
+                                    <p>by {{featured_article|author_name}}</p>
+                                </div>
+                                {% if config.ENABLE_HEARTING and featured_article.heart_count %}
+                                    <div class="col-sm-4">
+                                        <p class="heart-info">
+                                            <img src="{{url_for('static', filename='img/full-heart.svg')}}" width="20" height="17" alt="heart"/>
+                                            <span class="heart-count">{{featured_article.heart_count}}</span>
+                                        </p>
+                                    </div>
+                                {% endif %}
+
+                            </div><!-- row -->
+                            <div class="article-details row">
+                                <div class="col-xs-12">
+                                    <p class="cta-text">Read guide &raquo;</p>
+                                </div>
+                            </div><!-- row -->
+                        </a>
+                    </div>
+                </div>
+            {% else %}
+                <div class="row article-details">
+                    <div class="col-xs-12 col-md-offset-3 col-md-7">
+                        <span class="intro">Featured Guide</span>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-md-2 col-md-offset-1">
+                            <img src="{{url_for('static', filename='img/stack_images/other.png')}}" width="99" height="104" alt="other"/>
+                        </div>
+
+                        <div class="col-xs-12 col-md-7">
+                            <a href="{{url_for('faq')}}">
+                                <div class="article-details row">
+                                    <div class="col-sm-6">
+                                        <h1>Our Mission</h1>
+                                        <p>by hack.guides()</p>
+                                    </div>
+                                </div><!-- row -->
+                                <div class="article-details row">
+                                    <div class="col-xs-12">
+                                        <p class="cta-text">Read more &raquo;</p>
+                                    </div>
+                                </div><!-- row -->
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            </div>
         </div>
-    </div>
-
+    </div> <!-- hero -->
 {% endblock %}
 
 {% block body %}
     {% include "article_list.html" %}
-    {% include "mission.html" %}
 {% endblock %}

@@ -1,53 +1,38 @@
-                <div class="row features">
-                    <div class="col-md-1">
-                        <img src="/static/img/github.png" width="62" height="51" alt="Integrated with Github" />
+                <div class="row">
+                    <div id="footer-logo-1" class="row">
+                        <div class="col-xs-12">
+                            <a href="http://www.pluralsight.com">
+                                <img src="{{url_for('static', filename='img/footer_logo.png')}}" width="191" height="42" alt="Pluralsight"/> </a>
+                        </div><!-- col -->
                     </div>
-                    <div class="col-md-3">
-                        <h4>Integrates with Github</h4>
-                        <p>Connects and automatically posts your guides to Github.</p>
-                        <p><small><a href="{{repo_url}}" target="_blank">View articles on Github</a></small></p>
-                    </div>
+                </div>
 
-                    <div class="col-md-1">
-                        <img src="/static/img/markdown.png" width="59" height="50" alt="Write with Markdown" />
+                <div class="row">
+                    <div class="col-xs-12">
+                        <p>SIGN UP FOR EMAIL UPDATES: The best guides direct to your inbox.</p>
                     </div>
-                    <div class="col-md-3">
-                        <h4>Write using Markdown</h4>
-                        <p>Focus on content not formatting with simple Markdown syntax.</p>
-                        <p><small><a href="https://guides.github.com/features/mastering-markdown/" target="_blank">What is Markdown?</a></small></p>
-                    </div>
+                </div>
 
-                    <div class="col-md-1">
-                        <img src="/static/img/open_source.png" width="53" height="50" alt="Engine is Open Source" />
-                    </div>
-                    <div class="col-md-3">
-                        <h4>Engine is Open Source</h4>
-                        <p>Easily contribute content and code.</p>
-                        <p><small><a href="https://github.com/pluralsight/guides-cms" target="_blank">Browse the code</a></small></p>
-                    </div>
-                </div><!-- row features -->
-                <div class="row write-guide">
-                    <div class="col-md-12">
-                        <a href="/write/" class="emphasize">Write a Guide</a>
-                    </div>
-                </div><!-- row write-guide -->
-                <div class="row contact">
-                    <div class="col-md-6">
+                <div class="row">
+                    <div class="col-xs-12 col-lg-3" id="footer-logo-2">
                         <a href="http://www.pluralsight.com">
-                            <img src="/static/img/footer_logo.png" width="150" height="32" alt="Pluralsight"/>
-                        </a>
+                            <img src="{{url_for('static', filename='img/footer_logo.png')}}" width="191" height="42" alt="Pluralsight"/> </a>
                     </div><!-- col -->
 
-                    <div class="col-md-6 pull-right social-links">
-                        <a href="http://www.twitter.com/pluralsight">
-                            <img src="/static/img/twitter_footer.png" width="22" height="22" alt="Twitter"/>
+                    <div class="col-xs-12 col-lg-8">
+                        {% include 'signup_form.html' %}
+                    </div><!-- col -->
+
+                    <div class="col-xs-12 col-lg-1 social-links">
+                        <a href="http://www.facebook.com/pluralsight">
+                            <img src="{{url_for('static', filename='img/fb_footer.png')}}" width="10" height="19" alt="Facebook"/>
                         </a>
 
-                        <a href="http://www.facebook.com/pluralsight">
-                            <img src="/static/img/fb_footer.png" width="22" height="21" alt="Facebook"/>
+                        <a href="http://www.twitter.com/pluralsight">
+                            <img src="{{url_for('static', filename='img/twitter_footer.png')}}" width="19" height="15" alt="Twitter"/>
                         </a>
                     </div><!-- col social links -->
-                </div><!-- row contact -->
+                </div><!-- row -->
 <script type="text/javascript">
 setTimeout(function(){var a=document.createElement("script");
 var b=document.getElementsByTagName("script")[0];

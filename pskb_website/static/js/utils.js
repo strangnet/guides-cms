@@ -1,5 +1,16 @@
 "use strict";
 
+/* Render text in container_id as html from markdown and highlight the code */
+function render_article_text(textarea, container) {
+    var content = textarea.val();
+    textarea.remove();
+
+    var content_as_html = markdown2html(content);
+    container.html(content_as_html);
+    container.find('pre code').each(function(i, e) {hljs.highlightBlock(e)});
+    container.css('display', 'block');
+}
+
 /* Read headers from article as jquery object and put TOC in div_to_fill as
  * jquery object. */
 function populate_table_of_contents(article, div_to_fill) {
@@ -14,6 +25,7 @@ function populate_table_of_contents(article, div_to_fill) {
 
 function filter() {
     var stacks = document.getElementById("stacks");
+    var no_guides = $('#no-guides');
     var selected_stacks = [];
 
     for (var ii=0; ii < stacks.length; ii++) {
@@ -39,6 +51,12 @@ function filter() {
     });
 
     shuffle_items_in_grid(items_to_show);
+
+    if (!items_to_show.length) {
+        no_guides.css('display', 'block');
+    } else {
+        no_guides.css('display', 'none');
+    }
 }
 
 
@@ -87,7 +105,7 @@ function should_show(article, selected_stacks) {
     var show = false;
     $(article).find('.stack').each(function(stack_idx) {
         for (var ii=0; ii < selected_stacks.length; ii++) {
-            if (this.textContent == selected_stacks[ii]) {
+            if (this.textContent.toLowerCase() == selected_stacks[ii].toLowerCase()) {
                 show = true;
                 break;
             }
@@ -116,7 +134,7 @@ function create_toc_from_headers(headers) {
 
     for (var ii=0; ii < headers.length; ii++) {
         var hdr = headers[ii];
-        var url_content = hdr.textContent.replace(/ /g, "-").toLowerCase();
+        var url_content = hdr.textContent.replace(/[!\"#$%&\'()*\-/<=>?@\[\\\]^_`{|},.: ]/g, "-").toLowerCase();
         var re = /h(\d)/i;
         var hdr_num = parseInt(re.exec(hdr.tagName)[1]);
 
@@ -131,28 +149,10 @@ function create_toc_from_headers(headers) {
 }
 
 
-/* Turn any table tags in div into responsive tables by adding
- * bootstrap-specific markup around table */
-function create_responsive_tables(div) {
-    var tables = $(div).find('table');
-    tables.wrap('<div class="table-responsive">');
-    tables.addClass('table');
-}
-
-/* Change all external links to open in a new tab/window */
-function create_external_links(id) {
-    var links = $(id + ' a').filter(function() {
-        return this.hostname && this.hostname !== location.hostname;
-    });
-
-    links.append('&nbsp;<span class="glyphicon glyphicon-new-window" aria-hidden="true" style="font-size: 10px;"></span>');
-    links.attr("target", "_blank");
-}
-
 /* Confirm user typed DELETE in form and submit request for article deletion
  * This function works with confirm_deletion.html form.
  */
-function confirm_delete() {
+function confirm_delete(action_url) {
     var confirm_box = document.getElementById("confirm-box");
 
     if (confirm_box.value != 'DELETE') {
@@ -160,7 +160,7 @@ function confirm_delete() {
     }
 
     var form = document.createElement("form");
-    form.action = "/delete/";
+    form.action = action_url;
     form.method = "POST";
 
     var path = document.getElementById('article-path');
@@ -180,7 +180,7 @@ function supports_html5_storage() {
 }
 
 /* Show signup box on page if user scrolls near bottom or past specific amount */
-function init_signup_row(scroll_pos) {
+function init_signup_row(scroll_pos, signup_type) {
     var shown = false;
     $(window).scroll(function() {
         if (shown) {
@@ -189,7 +189,7 @@ function init_signup_row(scroll_pos) {
 
         var win = $(window);
         var near_bottom = $(document).height() - (win.height() + win.scrollTop()) < 50;
-        if (win.scrollTop() > scroll_pos || near_bottom) { 
+        if (win.scrollTop() > scroll_pos || near_bottom) {
             shown = true;
 
             /* Use HTML5 local storage to avoid showing popup but once
@@ -198,17 +198,18 @@ function init_signup_row(scroll_pos) {
             if (supports_html5_storage()) {
                 var now = Date.now();
 
-                if (localStorage["ps-guides-last-shown"] == null) {
-                    localStorage["ps-guides-last-shown"] = now;
+                var key = "ps-guides-last-shown-" + signup_type;
+                if (localStorage[key] == null) {
+                    localStorage[key] = now;
                 } else {
                     // 4 hours in milliseconds
                     var max_time = 1000 * 60 * 60 * 4;
-                    var last_shown = parseInt(localStorage["ps-guides-last-shown"]);
+                    var last_shown = parseInt(localStorage[key]);
 
                     if ((now - last_shown) < max_time) {
                         shown = false;
                     } else {
-                        localStorage["ps-guides-last-shown"] = now;
+                        localStorage[key] = now;
                     }
                 }
 
@@ -222,5 +223,110 @@ function init_signup_row(scroll_pos) {
     $('#signup-row .close-btn').click(function(){
         $('#signup-row').fadeOut('fast');
         $('#signup-row').hide();
+    });
+}
+
+
+/* Update given element with slack stats asychronously */
+function show_slack_stats(element) {
+    $.ajax({
+        type: 'GET',
+        url: '/api/slack_stats/',
+        contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+        dataType: 'json',
+        cache: false,
+        success: function(data) {
+            if (data.text) {
+                element.html(data.text);
+            }
+        },
+        /* Don't bother doing anything on error. These stats aren't essential. */
+        error: function(response) {
+            var status = response.status;
+            var data = response.responseJSON;
+            console.log(status, data);
+        },
+    });
+}
+
+/* Send ajax request for currently logged in user heart or un-heart guide and
+ * return new heart count after operation. */
+var toggling_heart = false;
+
+function toggleHeart(heart_element, count_element, stack, title) {
+    /* Reject multiple clicks in succession */
+    if (toggling_heart) {
+        return;
+    }
+
+    toggling_heart = true;
+
+    var add_heart = !heart_element.hasClass('heart');
+    var current_count = parseInt(count_element.html() || 0);
+    var request_url;
+
+    var addHeartToUI = function() {
+        heart_element.toggleClass('heart', true);
+        heart_element.toggleClass('heart-empty', false);
+        count_element.html(current_count + 1);
+    };
+
+    var removeHeartFromUI = function() {
+        heart_element.toggleClass('heart', false);
+        heart_element.toggleClass('heart-empty', true);
+        var new_count = current_count - 1;
+
+        if (!new_count) {
+            new_count = '';
+        }
+
+        count_element.html(new_count);
+    };
+
+    /* Go ahead and add the heart to the UI to give the user feedback that the
+     * action was submitted. */
+    if (add_heart) {
+        request_url = '/api/add-heart/';
+        addHeartToUI();
+    } else {
+        request_url = '/api/remove-heart/';
+        removeHeartFromUI();
+    }
+
+    $.ajax({
+        type: 'POST',
+        url: request_url,
+        contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+        data: {'stack': stack, 'title': title},
+        dataType: 'json',
+        cache: false,
+        complete: function(xhr, txt_status) {
+            toggling_heart = false;
+        },
+        success: function(data) {
+            /* Aesthetics only, showing 0 is kind of ugly IMO. */
+            if (data.count != 0) {
+                count_element.html(data.count);
+            } else {
+                count_element.html('');
+            }
+        },
+        error: function(response) {
+            var status = response.status;
+            var data = response.responseJSON;
+
+            console.log(status);
+
+            if (data.error) {
+                console.log(data.error);
+            }
+
+            /* Undo our overzealous update to the UI. */
+            if (add_heart) {
+                removeHeartFromUI();
+            } else {
+                addHeartToUI();
+            }
+        },
     });
 }

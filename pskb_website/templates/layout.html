@@ -1,35 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        {% block metatags %}
+            <meta charset="utf-8">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+        {% endblock %}
+
+        {% block open_graph %}
+            <meta property="og:site_name" content="hack.guides()" />
+            {% if not article %}
+                <meta property="og:title" content="hack.guides()" />
+                <meta property="og:url" content="{{request.url}}" />
+                <meta property="og:description" content="A developer community for writing guides" />
+                <meta property="og:image" content="{{url_for_domain('static', filename='img/logos/hackguides-black-470x80.png', _external=True, base_url=config.DOMAIN)}}" />
+                <meta property="og:image:width" content="199" />
+                <meta property="og:image:height" content="43" />
+            {% endif %}
+        {% endblock %}
 
         {% block title %}
 
-        {% if article and article.title %}
-            <title>{{article.title}} | Hacker Guides</title>
-        {% else %}
-            <title>Hacker Guides</title>
-        {% endif %}
+        <title>hack.guides()</title>
 
         {% endblock %}
 
-        <link rel="shortcut icon" type="image/png" href="/static/img/favicon.png">
+        <link rel="shortcut icon" type="image/png" href="{{url_for('static', filename='img/favicon.png')}}">
 
         {% block css %}
-        <link href="/static/css/vendor/bootstrap.min.css" rel="stylesheet">
-        <link href="/static/css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+        <link href="{{url_for('static', filename='css/base.css')}}" rel="stylesheet">
+
+        {% if config.DEBUG %}
+        <link href="{{url_for('static', filename='css/fonts.css')}}" rel="stylesheet">
+        {% else %}
+        <link rel="stylesheet" type="text/css" href="//cloud.typography.com/6966154/691568/css/fonts.css"/>
+        {% endif %}
+
         <link rel="stylesheet" type="text/css" href="//cloud.typography.com/6966154/691568/css/fonts.css"/>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.9.3/css/bootstrap-select.min.css">
         {% endblock %}
 
         {% block js %}
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-        <script src="/static/js/vendor/bootstrap.min.js"></script>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.9.3/css/bootstrap-select.min.css">
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.9.3/js/bootstrap-select.min.js"></script>
-        <script src="/static/js/utils.js"></script>
+        <script src="{{url_for('static', filename='js/utils.js')}}"></script>
         {% endblock %}
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
@@ -40,8 +56,8 @@
     </head>
     <body>
 
-        <div id="{{'header-dark' if not g.header_white else 'header-white'}}">
-            {% block header %}
+        {% block header %}
+            <div id="{{'header-white' if g.header_white else 'header-dark'}}" class="flash-msgs">
                 {% block nav %}
                     {% if not g.header_white %}
                         {% include "nav_black.html" %}
@@ -56,36 +72,37 @@
                     {% endfor %}
                 {% endwith %}
 
+                {% with messages = get_flashed_messages(category_filter=['warning']) %}
+                    {% for message in messages %}
+                        <p class="bg-warning">{{ message|safe }} </p>
+                    {% endfor %}
+                {% endwith %}
+
                 {% with messages = get_flashed_messages(category_filter=['error']) %}
                     {% for message in messages %}
                         <p class="bg-danger">{{ message|safe }} </p>
                     {% endfor %}
                 {% endwith %}
-
-            {% endblock %}
-
-        </div><!-- header -->
+            </div>
+        {% endblock %}
 
         <div id="body">
             <div class="container">
 
                 {% block body %}
-
                 {% endblock %}
 
             </div><!-- container -->
-
             <div id="signup-row" class="row" style="display:none;">
                 <div class="col-md-12">
                     <span class="close-btn">x</span>
                     <div class="row">
-                        <div class="col-md-3 col-md-offset-4 col-sm-6 col-sm-offset-3 col-xs-9 col-xs-offset-2">
-                            {% include "signup_form.html" %}
-                        </div> <!-- col 3 -->
+                        {% if g.slack_url %}
+                            {% include "slack_signup.html" %}
+                        {% endif %}
                     </div> <!-- inner row -->
                 </div><!-- col 12 -->
             </div><!-- row signup -->
-
         </div><!-- body -->
 
         <div id="footer">

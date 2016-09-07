@@ -1,36 +1,50 @@
 {% extends "layout.html" %}
 
+{% block title %}
+    {% if user %}
+        <title>{{user.name if user.name else user.login}} | hack.guides()</title>
+    {% else %}
+        {{super}}
+    {% endif %}
+{% endblock %}
+
 {% block body %}
 
 <div class="row">
     <div class="col-md-8">
-        {% if user.bio %}
-            <p>{{user.bio}}</p>
+        <h1>{{user.name}}</h1>
+        <div class="user-profile">
+            {% include 'user_info.html' with context %}
+        </div>
+
+        {% if published %}
+            <h2>Published Guides</h2>
+            {% with articles=published %}
+                {% include 'simple_article_list.html' %}
+            {% endwith %}
         {% endif %}
 
-        <h2>{{user.name if user.name else user.login}}'s guides</h2>
+        {% if in_review %}
+            <h3>In-Review Guides</h3>
+            {% with articles=in_review %}
+                {% include 'simple_article_list.html' %}
+            {% endwith %}
+        {% endif %}
 
-        {% for article in articles %}
-            {% if loop.index0 == 0 %}
-                <ul>
-            {% endif %}
+        {% if draft %}
+            <h4>Draft Guides</h4>
+            {% with articles=draft %}
+                {% include 'simple_article_list.html' %}
+            {% endwith %}
+        {% endif %}
 
-            <li><a href="/review/{{article.path}}">{{article.title}}</a></li>
-
-            {% if loop.last %}
-                </ul>
-            {% endif %}
-        {% else %}
-            <p>No articles yet!</p>
-            <p>
-                As a next step, why not create an article? You can do so by
-                <a href="/write/">clicking here</a>.
-            </p>
-        {% endfor %}
+        {% if not published and not in_review and not draft %}
+            <p>No guides yet!</p>
+        {% endif %}
 
     </div>
 
-    <div class="col-md-4">
+    <div class="col-md-4 img-column">
         {% if user.avatar_url %}
             <img height="230" src="{{user.avatar_url}}&amp;s=460" width="230" />
         {% endif %}

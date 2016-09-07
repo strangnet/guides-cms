@@ -1,40 +1,67 @@
 """
 Caching utilities
+
+There are some quirks to be aware of when caching in this system.  Typically
+you wouldn't want to set a timeout on the cache key and instead just flush it
+from cache when things changed.  We cannot do this because we can get changes
+from 2 places, the website application and github.com.  So, anything that can
+change on github.com should have a reasonable cache timeout.  This way even if
+our application doesn't see it change we will refresh from github periodically
+just in case it changed there too.
+
+Note that all errors are logged but not raised outside of this module.  The
+cache is considered optional so we should allow the application to run
+regardless.
+
+Alot of the following functions are simple wrappers to provide a clean API
+naming scheme to the outside world.  We could also expose our get/save wrappers
+if we wanted to.  However, we're trying to hide the fact that we use redis so
+we could easily switch later without other layers needing changes.
+
+In addition, this layer knows how to turn arguments into cache keys.
+
+Note we can use the same database for caching and models.heart data so you
+should be careful to never clash keys unless you set the REDIS_HEARTS_DB_URL
+environment variable to another database than this module uses!
 """
 
 import functools
-import urlparse
 
 from . import app
+from . import utils
 
-# 15 minutes
-DEFAULT_CACHE_TIMEOUT = 15 * 60
+# 8 minutes
+DEFAULT_CACHE_TIMEOUT = 8 * 60
 
-url = None
 redis_obj = None
 
 try:
-    import redis
-except ImportError:
-    app.logger.warning('No caching available, missing redis module')
+    url = app.config['REDISCLOUD_URL']
+except KeyError:
+    app.logger.warning('No caching available, please set REDISCLOUD_URL environment variable to enable caching.')
 else:
-    try:
-        url = app.config['REDISCLOUD_URL']
-    except KeyError:
-        url = None
-
-    if url is None:
-        app.logger.warning('No caching available, missing REDISCLOUD_URL env var')
+    if not url:
+        app.logger.warning('No caching available, empty REDISCLOUD_URL')
     else:
-        url = urlparse.urlparse(app.config['REDISCLOUD_URL'])
-        redis_obj = redis.Redis(host=url.hostname, port=url.port,
-                                password=url.password)
+        redis_obj = utils.configure_redis_from_url(url)
+        if redis_obj is None:
+            app.logger.warning('No caching available, missing redis module')
+
 
 # Local cache of etags from API requests for file listing. Saving these here
 # b/c they are small and can be kept in RAM without having to do http request
 # to redis.
 # Keyed by (repo, sha, filename)
 FILE_LISTING_ETAGS = {}
+
+
+def is_enabled():
+    """
+    Determine if cache is enabled or not
+    :returns: True or False
+    """
+
+    return redis_obj is not None
 
 
 def verify_redis_instance(func):
@@ -44,8 +71,8 @@ def verify_redis_instance(func):
 
     @functools.wraps(func)
     def _wrapper(*args, **kwargs):
-        if redis_obj is None:
-            return None
+        if not is_enabled():
+            return False
 
         return func(*args, **kwargs)
 
@@ -53,67 +80,105 @@ def verify_redis_instance(func):
 
 
 @verify_redis_instance
-def read_article(path, branch):
+def save(key, value, timeout=DEFAULT_CACHE_TIMEOUT):
     """
-    Look for article pointed to by given path and branch in cache
+    Generic function to save a key/value pair
 
-    :param path: Short path to article not including repo information
-    :param branch: Name of branch article belongs to
-    :returns: JSON representation of article or None if not found in cache
-    """
-
-    return redis_obj.get((path, branch))
-
-
-@verify_redis_instance
-def save_article(path, branch, article, timeout=DEFAULT_CACHE_TIMEOUT):
-    """
-    Save article JSON in cache
-
-    :param path: Short path to article not including repo information
-    :param branch: Name of branch article belongs to
-    :param article: Serialized representation of article to store in cache
-    :param timeout: Timeout in seconds to cache article, use None for no
-                    timeout
-    :returns: None
+    :param key: Key to save
+    :param value: Value to save
+    :param timeout: Timeout in seconds to cache text, use None for no timeout
+    :returns: True or False if save succeeded, irrespective of setting the
+              timeout
     """
 
-    key = (path, branch)
-    redis_obj.set(key, article)
+    try:
+        redis_obj.set(key, value)
+    except Exception:
+        app.logger.warning('Failed saving key "%s" to cache:', key,
+                           exc_info=True)
+        return False
 
     if timeout is not None:
-        redis_obj.expire(key, timeout)
+        try:
+            redis_obj.expire(key, timeout)
+        except Exception:
+            app.logger.warning('Failed setting key "%s", timeout: %d expiration in cache:',
+                               key, timeout, exc_info=True)
+
+    return True
 
 
 @verify_redis_instance
-def delete_article(article):
+def get(key):
     """
-    Delete article from cache
+    Look for cached value with given key
 
-    :param article: model.article.Article object
+    :param key: Key data was cached with
+    :returns: Value saved or None if not found or error
+    """
+
+    if redis_obj is None:
+        return None
+
+    try:
+        return redis_obj.get(key)
+    except Exception:
+        app.logger.warning('Failed reading key "%s" from cache:', key,
+                           exc_info=True)
+        return None
+
+
+def read_file(path, branch):
+    """
+    Look for text pointed to by given path and branch in cache
+
+    :param path: Short path to file not including repo information
+    :param branch: Name of branch file belongs to
+    :returns: Text saved to cache or None if not found
+    """
+
+    return get((path, branch))
+
+
+def save_file(path, branch, text, timeout=DEFAULT_CACHE_TIMEOUT):
+    """
+    Save file text in cache
+
+    :param path: Short path to file not including repo information
+    :param branch: Name of branch file belongs to
+    :param text: Raw text to save
+    :param timeout: Timeout in seconds to cache text, use None for no timeout
+    :returns: True or False if save succeeded
+    """
+
+    return save((path, branch), text, timeout=timeout)
+
+
+@verify_redis_instance
+def delete_file(path, branch):
+    """
+    Delete file from cache
+
+    :param path: Short path to file not including repo information
+    :param branch: Name of branch file belongs to
     :returns: None
     """
 
-    redis_obj.delete((article.path, article.branch))
+    redis_obj.delete((path, branch))
 
 
-@verify_redis_instance
 def save_user(username, user, timeout=DEFAULT_CACHE_TIMEOUT):
     """
     Save user JSON in cache
 
     :param username: Username for user
     :param user: Serialized representation of user to store in cache
-    :returns: None
+    :returns: True or False if save succeeded
     """
 
-    redis_obj.set(username, user)
-
-    if timeout is not None:
-        redis_obj.expire(username, timeout)
+    return save(username, user, timeout=timeout)
 
 
-@verify_redis_instance
 def read_user(username):
     """
     Read user from cache
@@ -122,7 +187,7 @@ def read_user(username):
     :returns: Serialized representation of user object or None if not found
     """
 
-    return redis_obj.get(username)
+    return get(username)
 
 
 # These getter/setters only exist so we can move the cache location of these
@@ -152,37 +217,26 @@ def save_file_listing_etag(key, etag):
     FILE_LISTING_ETAGS[key] = etag
 
 
-@verify_redis_instance
 def read_file_listing(key):
     """
     Read list of files from cache
 
-    :param key: (repo, sha, filename)
+    :param key: Key to read listing with
     :returns: Iterable of files
-
-    The key should be the same one used to save etag with
-    :func:`.save_file_listing_etag`.
     """
 
-    return redis_obj.get(key)
+    return get(key)
 
 
-@verify_redis_instance
 def save_file_listing(key, files, timeout=DEFAULT_CACHE_TIMEOUT):
     """
     Save list of files to cache
 
-    :param key: (repo, sha, filename)
+    :param key: Key to save listing with
     :param files: Iterable of files
     :param timeout: Timeout in seconds to cache list, use None for no
                     timeout
-    :returns: None
-
-    The key should be the same one used to save etag with
-    :func:`.save_file_listing_etag`.
+    :returns: True or False if save succeeded
     """
 
-    redis_obj.set(key, files)
-
-    if timeout is not None:
-        redis_obj.expire(key, timeout)
+    return save(key, files, timeout=timeout)

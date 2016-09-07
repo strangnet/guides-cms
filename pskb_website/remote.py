@@ -5,6 +5,7 @@ Main entry point for interacting with remote service APIs
 import base64
 import collections
 import json
+import urllib
 
 from flask_oauthlib.client import OAuth
 from flask import session
@@ -122,6 +123,8 @@ def _fetch_files_from_github_api(repo, sha, headers=None):
     """
 
     url = 'repos/%s/git/trees/%s?recursive=1' % (repo, sha)
+    app.logger.debug('GET: %s', url)
+
     resp = github.get(url, headers=headers)
     if resp.status not in (200, 304):
         log_error('Failed reading files', url, resp)
@@ -211,6 +214,8 @@ def repo_sha_from_github(repo, branch=u'master'):
     """
 
     url = 'repos/%s/git/refs/heads/%s' % (repo, branch)
+    app.logger.debug('GET: %s', url)
+
     resp = github.get(url)
 
     if resp.status != 200:
@@ -223,6 +228,8 @@ def repo_sha_from_github(repo, branch=u'master'):
 def primary_github_email_of_logged_in():
     """Get primary email address of logged in user"""
 
+    app.logger.debug('GET: user/emails')
+
     resp = github.get('user/emails')
     if resp.status != 200:
         return None
@@ -234,70 +241,116 @@ def primary_github_email_of_logged_in():
     return None
 
 
-def read_file_from_github(path, branch=u'master', rendered_text=True):
+def read_file_from_github(path, branch=u'master', rendered_text=True,
+                          allow_404=False):
     """
     Get rendered file text from github API
 
     :param path: Path to file (<owner>/<repo>/<dir>/.../<filename>)
     :param branch: Name of branch to read file from
     :param rendered_text: Return rendered or raw text
+    :param allow_404: False to log warning for 404 or True to allow it i.e.
+                      when you're just seeing if a file already exists
     :returns: file_details namedtuple or None if error
+
+    Note when requesting rendered text there will be no SHA or last_updated
+    data available.  This is a restriction from the github API
+    (https://developer.github.com/v3/media/#repository-contents) Requesting
+    file 'details' like SHA and rendered text are 2 API calls.  Therefore, if
+    you want all of that information you should call this function twice, once
+    with rendered_text=True and one with rendered_text=False and combine the
+    information yourself.
     """
 
-    details = file_details_from_github(path, branch)
-    if details is None:
-        return details
-
     if rendered_text:
-        text = rendered_markdown_from_github(path, branch)
-        details = file_details(path, branch, details.sha, details.last_updated,
-                               details.url, text)
+        text = rendered_markdown_from_github(path, branch, allow_404=allow_404)
+
+        # This is a little tricky b/c this URL could change on github and we
+        # would be wrong.  However, those URLs have been the same for years so
+        # seems like a safe enough bet at this point.
+        owner, repo, file_path = split_full_file_path(path)
+
+        # Cannot pass unicode data to pathname2url or it can raise KeyError.
+        # Must only pass URL-safe bytes. So, something like u'\u2026' will
+        # raise a # KeyError but if we encode it to bytes, '%E2%80%A6', things
+        # work correctly.
+        # http://stackoverflow.com/questions/15115588/urllib-quote-throws-keyerror
+
+        url = u'https://github.com/%s/%s/blob/%s/%s' % (
+                owner,
+                repo,
+                branch,
+                urllib.pathname2url(file_path.encode('utf-8')))
+
+        details = file_details(path, branch, None, None, url, text)
+    else:
+        details = file_details_from_github(path, branch, allow_404=allow_404)
 
     return details
 
 
-def rendered_markdown_from_github(path, branch=u'master'):
+def rendered_markdown_from_github(path, branch=u'master', allow_404=False):
     """
     Get rendered markdown file text from github API
 
     :param path: Path to file (<owner>/<repo>/<dir>/.../<filename.md>)
     :param branch: Name of branch to read file from
+    :param allow_404: False to log warning for 404 or True to allow it i.e.
+                      when you're just seeing if a file already exists
     :returns: HTML file text
     """
 
     url = contents_url_from_path(path)
     headers = {'accept': 'application/vnd.github.html'}
+    app.logger.debug('GET: %s, headers: %s, ref: %s', url, headers, branch)
 
     resp = github.get(url, headers=headers, data={'ref': branch})
     if resp.status == 200:
         return unicode(resp.data, encoding='utf-8')
 
-    log_error('Failed reading rendered markdown', url, resp, branch=branch)
+    if resp.status != 404 or not allow_404:
+        log_error('Failed reading rendered markdown', url, resp, branch=branch)
 
     return None
 
 
-def file_details_from_github(path, branch=u'master'):
+def file_details_from_github(path, branch=u'master', allow_404=False):
     """
     Get file details from github
 
     :param path: Path to file (<owner>/<repo>/<dir>/.../<filename>)
     :param branch: Name of branch to read file from
+    :param allow_404: False to log warning for 404 or True to allow it i.e.
+                      when you're just seeing if a file already exists
     :returns: file_details namedtuple or None for error
     """
 
     url = contents_url_from_path(path)
+    app.logger.debug('GET: %s ref: %s', url, branch)
+
     resp = github.get(url, data={'ref': branch})
 
     if resp.status == 200:
-        sha = resp.data['sha']
+
+        # Temporary debug. It seems that sometimes github returns a 200
+        # response and a list of items, which should only happen if we ask for
+        # the contents of a directory.  This function should never be called
+        # with a directory.
+        try:
+            sha = resp.data['sha']
+        except TypeError as err:
+            app.logger.error('Incorrect SHA response for URL: %s, resp: %s, err: %s',
+                             url, resp.data, err)
+            return None
+
         link = resp.data['_links']['html']
         text = unicode(base64.b64decode(resp.data['content'].encode('utf-8')),
                        encoding='utf-8')
         last_updated = resp._resp.headers.get('Last-Modified')
     else:
-        app.logger.warning('Failed reading file details at "%s", status: %d, branch: %s, data: %s',
-                           url, resp.status, branch, resp.data)
+        if resp.status != 404 or (resp.status == 404 and not allow_404):
+            app.logger.warning('Failed reading file details at "%s", status: %d, branch: %s, data: %s',
+                               url, resp.status, branch, resp.data)
 
         return None
 
@@ -319,7 +372,11 @@ def commit_file_to_github(path, message, content, name, email, sha=None,
                    exist)
     :param auto_encode: Boolean to automatically encode data as utf-8
 
-    :returns: True if data was saved, False otherwise
+    :returns: SHA of commit or None for failure
+
+    Note that name and email can be None if you want to make a commit with the
+    REPO_OWNER.  However, name and email should both exist or both be None,
+    which is a requirement of the underlying Github API.
     """
 
     url = contents_url_from_path(path)
@@ -327,8 +384,13 @@ def commit_file_to_github(path, message, content, name, email, sha=None,
     if auto_encode:
         content = base64.b64encode(content.encode('utf-8'))
 
-    commit_info = {'message': message, 'content': content, 'branch': branch,
-                   'author': {'name': name, 'email': email}}
+    commit_info = {'message': message, 'content': content, 'branch': branch}
+
+    if name is not None and email is not None:
+        commit_info['author'] = {'name': name, 'email': email}
+        commit_info['committer'] = {'name': name, 'email': email}
+    elif (name is None and email is not None) or (name is not None and email is None):
+        raise ValueError('Must specify both name and email or neither')
 
     if sha:
         commit_info['sha'] = sha
@@ -339,15 +401,17 @@ def commit_file_to_github(path, message, content, name, email, sha=None,
     # for more information.
     token = (app.config['REPO_OWNER_ACCESS_TOKEN'], )
 
+    app.logger.debug('PUT: %s, data: %s, token: %s', url, commit_info, token)
+
     resp = github.put(url, data=commit_info, format='json', token=token)
 
     if resp.status not in (201, 200):
         log_error('Failed saving file', url, resp, commit_msg=message,
                   content=content, name=name, email=email, sha=sha,
                   branch=branch)
-        return False
+        return None
 
-    return True
+    return resp.data['commit']['sha']
 
 
 def commit_image_to_github(path, message, file_, name, email, sha=None,
@@ -364,7 +428,7 @@ def commit_image_to_github(path, message, file_, name, email, sha=None,
     :param branch: Name of branch to commit file to (branch must already
                    exist)
 
-    :returns: True if data was saved, False otherwise
+    :returns: SHA of commit or None for failure
     """
 
     contents = base64.encodestring(file_.read())
@@ -385,6 +449,8 @@ def read_user_from_github(username=None):
         url = 'users/%s' % (username)
     else:
         url = 'user'
+
+    app.logger.debug('GET: %s', url)
 
     resp = github.get(url)
 
@@ -411,6 +477,8 @@ def read_repo_collaborators_from_github(owner=None, repo=None):
 
     # This endpoint requires a user that has push access
     token = (app.config['REPO_OWNER_ACCESS_TOKEN'], )
+
+    app.logger.debug('GET: %s, token: %s', url, token)
 
     resp = github.get(url, token=token)
 
@@ -464,7 +532,18 @@ def contents_url_from_path(path):
     """
 
     owner, repo, file_path = split_full_file_path(path)
-    return 'repos/%s/%s/contents/%s' % (owner, repo, file_path)
+
+    # Cannot pass unicode data to pathname2url or it can raise KeyError. Must
+    # only pass URL-safe bytes. So, something like u'\u2026' will raise a
+    # KeyError but if we encode it to bytes, '%E2%80%A6', things work
+    # correctly.
+    # http://stackoverflow.com/questions/15115588/urllib-quote-throws-keyerror
+    owner = owner.encode('utf-8')
+    repo = repo.encode('utf-8')
+    file_path = file_path.encode('utf-8')
+
+    return urllib.pathname2url('repos/%s/%s/contents/%s' % (owner, repo,
+                                                            file_path))
 
 
 def read_branch(repo_path, name):
@@ -477,6 +556,9 @@ def read_branch(repo_path, name):
     """
 
     url = 'repos/%s/git/refs/heads/%s' % (repo_path, name)
+
+    app.logger.debug('GET: %s', url)
+
     resp = github.get(url)
 
     # Branch doesn't exist
@@ -507,6 +589,9 @@ def create_branch(repo_path, name, sha):
     # Must use token of owner for this request b/c only owners and
     # collaborators can create branches
     token = (app.config['REPO_OWNER_ACCESS_TOKEN'], )
+
+    app.logger.debug('POST: %s, data: %s, token: %s', url, data, token)
+
     resp = github.post(url, data=data, format='json', token=token)
 
     if resp.status == 422:
@@ -542,6 +627,9 @@ def update_branch(repo_path, name, sha):
     # Must use token of owner for this request b/c only owners and
     # collaborators can update branches
     token = (app.config['REPO_OWNER_ACCESS_TOKEN'], )
+
+    app.logger.debug('PATCH: %s, data: %s, token: %s', url, data, token)
+
     resp = github.patch(url, data=data, format='json', token=token)
     if resp.status != 200:
         log_error('Failed updating branch', url, resp, sha=sha)
@@ -558,6 +646,8 @@ def check_rate_limit():
     """
 
     url = '/rate_limit'
+    app.logger.debug('GET: %s', url)
+
     resp = github.get(url)
     if resp.status != 200:
         log_error('Failed checking rate limit', url, resp)
@@ -588,13 +678,17 @@ def remove_file_from_github(path, message, name, email, branch):
 
     url = contents_url_from_path(path)
     commit_info = {'sha': details.sha, 'branch': branch, 'message': message,
-                   'author': {'name': name, 'email': email}}
+                   'author': {'name': name, 'email': email},
+                   'committer': {'name': name, 'email': email}}
 
     # The flask-oauthlib API expects the access token to be in a tuple or a
     # list.  Not exactly sure why since the underlying oauthlib library has a
     # separate kwargs for access_token.  See flask_oauthlib.client.make_client
     # for more information.
     token = (app.config['REPO_OWNER_ACCESS_TOKEN'], )
+
+    app.logger.debug('DELETE: %s, data: %s, token: %s', url, commit_info, token)
+
     resp = github.delete(url, data=commit_info, format='json', token=token)
     if resp.status != 200:
         log_error('Failed removing file', url, resp, file=path)
@@ -618,6 +712,9 @@ def merge_branch(repo_path, base, head, message):
     data = {'base': base, 'head': head, 'commit_message': message}
 
     token = (app.config['REPO_OWNER_ACCESS_TOKEN'], )
+
+    app.logger.debug('POST: %s, data: %s, token: %s', url, data, token)
+
     resp = github.post(url, data=data, format='json', token=token)
 
     # 204 means no content i.e. no merge needed
@@ -626,3 +723,91 @@ def merge_branch(repo_path, base, head, message):
 
     log_error('Failed merging', url, resp, repo=repo_path, base=base, head=head)
     return False
+
+
+def file_contributors(path, branch=u'master'):
+    """
+    Get dictionary of User objects representing authors and committers to a
+    file
+
+    :param path: Short-path to file (<dir>/.../<filename>) i.e. without repo
+                 and owner
+    :param base: Name of branch to read contributors for
+    :returns: Dictionary of the following form::
+
+        {'authors': set([(name, login), (name, login), ...]),
+         'committers': set([(name, login), (name, login), ...])}
+
+    Note that name can be None if user doesn't have their full name setup on
+    github account.
+    """
+
+    contribs = {'authors': set(), 'committers': set()}
+    url = u'/repos/%s/commits' % (default_repo_path())
+
+    app.logger.debug('GET: %s path: %s, branch: %s', url, path, branch)
+
+    resp = github.get(url, data={'path': path, 'branch': branch})
+    if resp.status != 200:
+        log_error('Failed reading commits from github', url, resp)
+        return contribs
+
+    def _extract_data_from_commit(commit, key):
+        login = commit[key]['login']
+
+        try:
+            author_name = commit['commit'][key]['name']
+        except KeyError:
+            author_name = None
+        else:
+            if not author_name:
+                author_name = None
+
+        # API can return same name and login depending on how the account and
+        # commit information is setup so don't bother storing duplicates. This
+        # way caller knows we didn't get a real author name.
+        if login == author_name:
+            author_name = None
+
+        return (author_name, commit[key]['login'])
+
+    for commit in resp.data:
+        # Check author/committer first b/c we've seen issues in github API
+        # where these can actually be None, like this commit:
+        # https://github.com/pluralsight/guides/commit/44cd2072df8994fea2cee9de6ffb6c174b57bf03
+        if commit['author']:
+            contribs['authors'].add(_extract_data_from_commit(commit, 'author'))
+
+        if commit['committer']:
+            contribs['committers'].add(_extract_data_from_commit(commit, 'committer'))
+
+    return contribs
+
+
+def contributor_stats(repo_path=None):
+    """
+    Get response of /repos/<repo_path>/stats/contributors from github.com
+
+    :param repo_path: Default repo or repo path in owner/repo_name form
+    :returns: Raw response of contributor stats from https://developer.github.com/v3/repos/statistics/#get-contributors-list-with-additions-deletions-and-commit-counts
+
+    Note the github caches contributor results so an empty list can also be
+    returned if the data is not available yet or there is an error
+    """
+
+    repo_path = default_repo_path() if repo_path is None else repo_path
+    url = u'/repos/%s/stats/contributors' % (repo_path)
+
+    app.logger.debug('GET: %s', url)
+
+    resp = github.get(url)
+
+    stats = []
+    if resp.status == 200:
+        stats = resp.data
+    elif resp.status == 202:
+        app.logger.info('Data not in cache from github.com')
+    else:
+        log_error('Failed reading stats from github', url, resp)
+
+    return stats

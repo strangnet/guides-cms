@@ -14,7 +14,7 @@ FAVORITE_STACKS = set()
 try:
     MC = mailchimp.Mailchimp(app.config['MAILCHIMP_API_KEY'])
 except mailchimp.Error as err:
-    app.logger.warning('Unable to setup mailchimp API: %s', err)
+    app.logger.warning('Unable to setup mailchimp API if you want to use the email subscribe functionality: %s', err)
     MC = None
 
 LIST_ID = app.config['MAILCHIMP_LIST_ID']
@@ -31,8 +31,7 @@ def add_subscriber(email, stacks):
     :returns: Subscriber ID or None if subscriber was not added
     """
 
-    if not FAVORITE_STACKS:
-        initialize_favorite_stacks(LIST_ID)
+    initialize_favorite_stacks(LIST_ID)
 
     # Weed out any stacks that are not already in mailchimp list groups
     groups = []
@@ -54,7 +53,8 @@ def add_subscriber(email, stacks):
                                            update_existing=True,
                                            replace_interests=True)
     except Exception as err:
-        app.logger.error('Failed adding subscriber: %s', err)
+        app.logger.error('Failed adding subscriber: %s (list: "%s", email: "%s", stacks: "%s", groups: "%s")',
+                         err, LIST_ID, email, stacks, groups, exc_info=True)
         return None
 
     return subscriber_id
@@ -67,7 +67,12 @@ def initialize_favorite_stacks(list_id):
 
     global FAVORITE_STACKS
 
-    FAVORITE_STACKS = get_groups(list_id).keys()
+    if FAVORITE_STACKS:
+        return
+
+    groups = get_groups(list_id).keys()
+    if groups:
+        FAVORITE_STACKS = groups
 
 
 def get_groups(list_id):
@@ -79,10 +84,19 @@ def get_groups(list_id):
     :returns: Dictionary mapping each group name to group id
     """
 
-    if MC is None:
-        return {}
+    full_group_info = {}
 
-    result = MC.lists.interest_groupings(list_id)
+    if MC is None:
+        return full_group_info
+
+    try:
+        result = MC.lists.interest_groupings(list_id)
+    except ValueError:
+        app.logger.error('Failed getting groups from mailchimp (list: "%s")',
+                         list_id,
+                         exc_info=True)
+        return full_group_info
+
 
     try:
         full_group_info = result[0]['groups']

@@ -24,7 +24,16 @@ File
 .. automodule:: pskb_website.models.file
     :members:
 
+Heart
+=====
+.. automodule:: pskb_website.models.heart
+
 Image
 =====
 .. automodule:: pskb_website.models.image
+    :members:
+
+Lib
+===
+.. automodule:: pskb_website.models.lib
     :members:

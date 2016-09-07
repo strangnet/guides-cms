@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 =================
-Hacker Guides CMS
+hack.guides() CMS
 =================
 
 Contents:
@@ -16,13 +16,20 @@ Contents:
    intro
    CHANGELOG
    install
+   testing
    github_setup
-   deployment
-   github_api_usage
    github_repo_layout
+   deployment
+   publish_workflow
+   merging_changes
+   github_api_usage
+   github_webhooks
+   faq
    views
    model_api
    remote_api
+   utils
+   creating_releases
 
 
 ==================
@@ -32,4 +39,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

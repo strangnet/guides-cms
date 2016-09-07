@@ -2,105 +2,201 @@
 
 {% block css %}
     {{ super() }}
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.9.3/css/bootstrap-select.min.css">
-    <link rel="stylesheet" href="/static/css/vendor/bootstrap-markdown.min.css">
-    <link rel="stylesheet" href="/static/css/vendor/editor/github.css">
-    <link rel="stylesheet" href="/static/css/vendor/github.css">
-    <link rel="stylesheet" href="/static/css/vendor/hljs_github.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.9.3/css/bootstrap-select.min.css">
+
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/hljs_github-gist.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/github-markdown.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/vendor/editor/design.css') }}">
 {% endblock %}
 
 {% block js %}
-    {{super()}}
-    <script src="/static/js/vendor/editor/marked.js"></script>
-    <script src="/static/js/vendor/editor/highlight.pack.js"></script>
-    <script src="/static/js/vendor/editor/bootstrap-markdown.js"></script>
-    <script src="/static/js/vendor/editor/dropzone.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.9.3/js/bootstrap-select.min.js"></script>
-    <script src="/static/js/editor_utils.js"></script>
+    {{ super() }}
+    <!-- base -->
+    <script src="{{ url_for('static', filename='js/vendor/editor/highlight.pack.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/vendor/editor/dropzone.js') }}"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.9.3/js/bootstrap-select.min.js"></script>
+    <script src="{{ url_for('static', filename='js/vendor/underscore-min.js') }}"></script>
+    <script src="{{ url_for('static', filename='ace/ace.js') }}"></script>
+    <!-- marked -->
+    <script src="{{ url_for('static', filename='js/vendor/vdom/virtual-dom.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/vendor/vdom/vdom-parser-standalone.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/vendor/vdom/blake2s.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/vendor/editor/marked.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/marked_settings.js') }}"></script>
+    <!-- page -->
+    <script src="{{ url_for('static', filename='js/editor_utils.js') }}"></script>
 {% endblock %}
 
 {% block body %}
 
 <div id="editor-section">
-    <h3>1. Get Started</h3>
-    <p>
-        <ul>
-            <li>Saving your guide will send it straight to our official <a href="https://github.com/pluralsight/guides/"> Github repository</a> where editors around the world can help you fullfill your guide's potential.</li>
-            <li>
-                Your guide will show up in the master branch of our
-                <a href="https://github.com/pluralsight/guides/"> Github repository</a>
-                unless you're editing a guide started by someone else.  In that
-                case, a branch named after your username will automatically be
-                created for you.  The original author can then see the changes
-                you're suggesting directly on Github.
-            </li>
-            <li>
-                Once our editors feel your article is ready, we'll put your
-                guide on our <a href="/">homepage</a> so your expertise can
-                help educate the world.
-            </li>
-        </ul>
-    </p>
-    <h3>2. Pick a Title</h3>
-        <ul>
-            <li>
-            Try to make your title concise and to the point maximum length is
-        130 characters.
-            </li>
-        </ul>
-    <input id="title" name="title" type="text" class="form-control article-title" placeholder="Title" maxlength="130" value="{{article.title}}" {{'readOnly="true"' if article else ""}} />
+    <div class="row editor-preview-wrapper">
 
-    <br />
-    <h3>3. Write</h3>
-    <p>
-        <ul>
-            <li>The editor supports <a href="http://daringfireball.net/projects/markdown/">markdown format</a>, which means you can create great looking guides with a bit of special syntax:
-                <ul>
-                    <li>Surround text with ** to make this **<b>bold</b>**.</li>
-                    <li>Use - in front of lines to automatically create lists.</li>
-                    <li>Use # to make header text and much more.</li>
-                    <li>Get more tips <a
-                        href="http://daringfireball.net/projects/markdown/syntax">here</a>.</li>
-                </ul>
-            <li>
-                We'll automatically a create Table of Contents for your
-                guide based on your usage of &lt;h1&gt; and &lt;h2&gt; tags.
-            </li>
-            <li>
-                Start with &lt;h1&gt; for your main point and use larger header
-                tags to nest your supporting points.
-            </li>
-            <li>
-                Use the preview button when hovering over the editor to get a
-                quick look at how your content will look once published.
-            </li>
-        </ul>
-    </p>
+        {% include "editor_help.html" %}
 
-    <div class="editor-container">
-        <textarea id="md-editor-ta" name="content">{{article.content}}</textarea>
+        <div class="col-xs-12 col-sm-6 editor-column" id="droppable-area">
+            <div class="editor-header">
+                <a href="{{url_for('index')}}">
+                    <img src="/static/img/light-logo.png" alt="hack.guides()" class="editor-ps-logo img-responsive">
+                </a>
+
+                <div id="btn-save-wrapper" class="tooltip-wrapper disabled" data-placement="bottom">
+                    <button id="btn-save" onclick="save('{{article.sha}}', '{{article.path}}', '{{secondary_repo}}', '{{'' if not article.first_commit else article.first_commit}}')" class="btn btn-primary btn-save btn-autosize" disabled>Save</button>
+                </div>
+
+                <button id="btn-back" onclick="back()" class="btn btn-danger btn-back btn-autosize">Back</button>
+
+                <button id="btn-close" onclick="closeLiveMarkdownTutorial()" class="btn btn-info btn-close btn-autosize" style="display:none;">Close tutorial</button>
+
+                <div class="dropdown">
+                    <button id="editor-options" class="btn btn-info btn-options btn-autosize" data-target="#" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        Options
+                        <span class="caret"></span>
+                    </button>
+
+                    <ul class="dropdown-menu" aria-labelledby="editor-options">
+                        <li id="btn-scroll-sync" data-toggle="tooltip" data-placement="left" title="Sync your place in guide between editor and preview panes">
+                            <a data-target="#">Scroll Sync&nbsp;<span class="fa fa-check-square"></span></a>
+                        </li>
+                        <li id="btn-live-tutorial" data-toggle="tooltip" data-placement="left" title="Toggle interactive markdown tutorial. Don't worry your guide is saved and restored when using the tutorial." class="markdown-help">
+                            <a data-target="#">Live Markdown Tutorial&nbsp;<span class="fa fa-check-square"></span></a>
+                        </li>
+                        <li id="btn-upload" data-toggle="tooltip" data-placement="left" title="Click to upload image, dragging and dropping images onto editor also supported" class="btn-dropzone">
+                            <a data-target="#">Add Image</a>
+                        </li>
+                        <li id="btn-show-help" data-toggle="tooltip" data-placement="left" title="Toggle help along bottom">
+                            <a data-target="#">Help&nbsp;<span class="fa fa-check-square"></a>
+                        </li>
+                    </ul>
+                </div>
+
+                <br style="clear: both;"/>
+
+                <h4 class="tutorial-title" style="display:none; text-align:center;">Live Markdown Tutorial</h4>
+
+                <input id="title" name="title" type="text" placeholder="Title" data-toggle="tooltip" data-placement="bottom" title="Concise and descriptive, a good title is 130 characters or less" is 130 charmaxlength="130" value="{{article.title}}" {{'readOnly="true"' if article else ""}} {% if not article %}autofocus{% endif %} required="required"/>
+                <input id="original_stack" name="original_stack" type="hidden" value="{{article.stacks[0] if article else ''}}" />
+
+                <select id="stacks" name="stacks" class="selectpicker" data-width="100%" data-size="6" data-dropup-auto="false" data-header="Scroll for additional stacks" data-title="Stacks" required="required" data-toggle="tooltip" data-placement="bottom" title="Pick a stack to help categorize your guide">
+                    <option value="" {{"selected" if not selected_stack}}>Stack</option>
+                    {% for stack in stacks %}
+                        <option value="{{ stack }}" {{"selected" if selected_stack and selected_stack == stack}}>{{ stack }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div id="editor-wrapper">
+                <div id="editor"></div>
+            </div>
+
+            <div class="dz-preview dz-file-preview" id="preview-template" style="display: none;">
+                <div class="dz-details" style="display: none;">
+                <div class="dz-filename" style="display: none;"><span data-dz-name></span></div>
+                <div class="dz-size" data-dz-size style="display: none;"></div>
+                    <img data-dz-thumbnail />
+                </div>
+                <div class="dz-progress" style="display: none;"><span class="dz-upload" data-dz-uploadprogress></span></div>
+                <div class="dz-success-mark" style="display: none;"><span>✔</span></div>
+                <div class="dz-error-mark" style="display: none;"><span>✘</span></div>
+                <div class="dz-error-message"><span data-dz-errormessage></span></div>
+            </div>
+        </div>
+
+        <div class="col-xs-12 col-sm-6 preview-column">
+            <div class="preview-header">
+                <div class="preview-text hidden-xs hidden-sm">PREVIEW</div>
+                <h4 class="tutorial-title" style="display:none;">Live Markdown Tutorial</h4>
+                <div id="article-title" class=""></div>
+                <div id="article-stack" class=""></div>
+            </div>
+
+            <div id="preview" class=""></div>
+        </div>
     </div>
-
-    <br />
-
-    <h3>4. Choose your stack</h3>
-    <p>
-        Picking a stack to categorize your guide will help readers find it
-        more easily.
-    </p>
-    <select id="stacks" name="stacks" class="form-control selectpicker stacks-editor" data-size="6"  data-dropup-auto="false" data-header="Scroll for additional stacks" data-title="Stacks">
-        {% for stack in stacks %}
-            <option value="{{ stack }}" {{"selected" if selected_stack and selected_stack == stack}}>{{ stack }}</option>
-        {% endfor %}
-    </select>
-
-    <br />
-    <br />
-
-    <button onclick="save('{{article.sha}}', '{{article.path}}', '{{secondary_repo}}')" class="btn btn-primary">Save</button>
 </div>
 
+<textarea id="__initial_content__" style="display:none;">{{ article.content }}</textarea>
+
+{% include "editor_error.html" %}
+
 <script type="text/javascript">
-    initialize_editor('{{'' if not article.author_name else article.author_name}}', '{{'' if not article.author_real_name else article.author_real_name}}');
+    function back() {
+        {% if article %}
+            window.location.href = "{{article|url_for_article(branch=article.branch)}}";
+        {% else %}
+            window.location.href = "{{url_for('index')}}";
+        {% endif %}
+    }
+
+    $(document).ready(function() {
+        init_editor_help();
+
+        var local_filename = '{{ article.sha or "hack.guides-draft" }}';
+        var author_name = '{{ '' if not article.author_name else article.author_name }}';
+        var author_real_name = '{{ '' if not article.author_real_name else article.author_real_name }}';
+        var img_upload_url = '{{ url_for("img_upload") }}';
+        var editor = initialize_editor(local_filename, author_name, author_real_name, img_upload_url);
+
+        $("#title").change(function() {
+            $("#article-title").html($("#title").val() || 'Untitled');
+            enableDisableSaveButton();
+        });
+
+        /* Make sure to enable/disable on blur event to work around a Safari
+           issue with autofill:
+           - http://stackoverflow.com/questions/11708092/detecting-browser-autofill
+           - https://github.com/pluralsight/guides-cms/pull/73
+         */
+        $("#title").blur(function() {
+            $("#article-title").html($("#title").val() || 'Untitled');
+            enableDisableSaveButton();
+        });
+
+        $("#stacks").change(function() {
+            var stacks = $('#stacks').val();
+            $("#article-stack").html(stacks ? 'Related to <i>' + stacks + '</i>' : 'no stack defined yet');
+        });
+        $("#title").change();
+        $("#stacks").change();
+
+        openFullscreen();
+
+        $("#btn-scroll-sync").click(function() {
+            toggleScrollSync();
+            $("#btn-scroll-sync").toggleClass('active');
+        });
+        $("#btn-scroll-sync").click();
+
+        $("#btn-live-tutorial").click(function() {
+            toggleLiveTutorial();
+            /* Handling of 'active' class handled in toggleLiveTutorial()
+             * because live tutorial can be enabled/disabled from this button
+             * as well as another 'close' button. */
+        });
+
+        $('#btn-show-help').click(function() {
+            toggleHelp();
+            $("#btn-show-help").toggleClass('active');
+        });
+
+        $('#editor-help #close').click(function() {
+            hideHelp();
+            $("#btn-show-help").toggleClass('active');
+        });
+
+        if (isHelpEnabled) {
+            $("#btn-show-help").toggleClass('active');
+        }
+
+        /* Initialize bootstrap tooltips */
+        $('[data-toggle="tooltip"]').tooltip();
+    });
 </script>
+{% endblock %}
+
+{% block footer %}
+
+{# No footer for editor, it's full-screen! #}
+
 {% endblock %}

@@ -2,16 +2,17 @@
 
 {% block body %}
 
-<h1>Github Required</h1>
+<h1>Join the movement</h1>
 <br /><br />
-<p> <a href="/github_login" class="emphasize-dark">Login with Github</a> </p>
-<br />
 
-<h2>What do you do with my account?</h2>
+{% include 'why_login.html' %}
 
-<ol style="font-size: 18px;">
-    <li>Verify you are who you say you are</li>
-    <li>Read your username and email address (for adding you as a collaborator and commiting changes)</li>
-</ol>
+<br /><br />
+
+<p>
+    Still not convinced? No worries, read <a href="{{url_for('faq')}}">our mission</a> for
+    more information, or just enjoy reading these free guides provided by your
+    peers.
+</p>
 
 {% endblock %}
